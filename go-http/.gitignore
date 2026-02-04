@@ -1,0 +1,7 @@
+# Binaries
+main
+main.exe
+*.log
+
+# Mac system files
+.DS_Store
