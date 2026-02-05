@@ -177,6 +177,52 @@ curl -v "http://127.0.0.1:8081/call-echo?msg=hello"
 
 ![Failure Screenshot](assets/failure.png)
 
+### Timeout Case (Simulated)
+
+When Service A is running but takes longer than 1 second to respond (simulated delay), Service B aborts the request, logs the timeout, and returns a `503 Service Unavailable` status.
+
+**Command:**
+
+```bash
+curl -v "http://127.0.0.1:8081/call-echo?msg=hello"
+```
+
+
+**Output:**
+
+```bash
+
+*   Trying 127.0.0.1:8081...
+* Connected to 127.0.0.1 (127.0.0.1) port 8081
+> GET /call-echo?msg=hello HTTP/1.1
+> Host: 127.0.0.1:8081
+> User-Agent: curl/8.7.1
+> Accept: */*
+>
+* Request completely sent off
+< HTTP/1.1 503 Service Unavailable
+< Content-Type: application/json
+< Date: Thu, 05 Feb 2026 03:24:20 GMT
+< Content-Length: 176
+<
+{"error":"Get \"http://127.0.0.1:8080/echo?msg=hello\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)","service_a":"unavailable","service_b":"ok"}
+* Connection #0 to host 127.0.0.1 left intact
+
+```
+
+```json
+
+{
+  "error": "Get \"[http://127.0.0.1:8080/echo?msg=hello](http://127.0.0.1:8080/echo?msg=hello)\": context deadline exceeded (Client.Timeout exceeded while awaiting headers)",
+  "service_a": "unavailable",
+  "service_b": "ok"
+}
+
+```
+
+![Failure Screenshot](assets/timeout.png)
+
+
 ## What Makes This Distributed?
 
 
