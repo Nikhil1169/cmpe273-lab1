@@ -182,3 +182,32 @@ curl -v "http://127.0.0.1:8081/call-echo?msg=hello"
 
 
 This system is distributed because it consists of two distinct processes (Service A and Service B) running in separate memory spaces. They do not share variables or state directly; instead, they communicate strictly over a network protocol (HTTP). This architecture allows them to fail independently: if Service A crashes, Service B remains operational and can gracefully handle the outage by returning a 503 error rather than crashing the entire application.
+
+
+## Concept Explanations
+
+### 1. What happens on timeout?
+Service B is configured with a strict 1-second timeout (`http.Client{Timeout: 1 * time.Second}`).
+If Service A accepts the connection but takes longer than 1 second to respond (e.g., due to high load or a deadlock):
+1.  The `http.Client` inside Service B cancels the request context.
+2.  Service B stops waiting immediately.
+3.  It logs an error: `context deadline exceeded`.
+4.  It returns a `503 Service Unavailable` response to the user.
+*This prevents Service B from "hanging" indefinitely when dependencies are slow.*
+
+### 2. What happens if Service A is down?
+If Service A is crashed or stopped:
+1.  The operating system immediately rejects the connection attempt from Service B.
+2.  Service B receives a `connection refused` error (dial tcp error).
+3.  Service B catches this error, logs it as a failure, and safely returns a `503 Service Unavailable` JSON response.
+*This demonstrates "Graceful Degradation"—the system reports the failure cleanly rather than crashing the client.*
+
+### 3. What do your logs show, and how would you debug?
+My logs are structured as key-value pairs (structured logging) to make debugging easier.
+* **Success Log:** `service=B endpoint=/call-echo status=ok latency_ms=5`
+* **Failure Log:** `service=B endpoint=/call-echo status=error error="...connection refused" latency_ms=0`
+
+**How to debug using these logs:**
+1.  **Check `status`:** Quickly filter for `status=error` to find failed requests.
+2.  **Check `latency_ms`:** High latency (e.g., >1000ms) suggests a timeout or performance issue. Zero latency suggests a connection failure (Service A is down).
+3.  **Trace the path:** By correlating timestamps, I can see if a failure in Service B was caused by a specific request to Service A.
