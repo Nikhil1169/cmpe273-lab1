@@ -18,7 +18,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	msg := r.URL.Query().Get("msg")
 
-	// To Simulate processing time (optional, but good for testing timeouts uncomment the below line)
+	// To Simulate processing time (optional, but good for testing timeouts) uncomment the below line
 	//time.Sleep(2000 * time.Millisecond)
 
 	w.Header().Set("Content-Type", "application/json")
